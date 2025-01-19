@@ -3,8 +3,7 @@ package com.guptem.UberBackend.entities;
 import com.guptem.UberBackend.entities.enums.PaymentMethods;
 import com.guptem.UberBackend.entities.enums.PaymentStatus;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
@@ -12,7 +11,10 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @Setter
-public class PaymentEntity {
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+public class Payment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,6 +25,8 @@ public class PaymentEntity {
 
     @OneToOne(fetch = FetchType.LAZY)
     private Ride ride;
+
+    private Double amount;
 
     @Enumerated(EnumType.STRING)
     private PaymentStatus paymentStatus;

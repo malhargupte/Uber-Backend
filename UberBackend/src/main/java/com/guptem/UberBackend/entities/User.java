@@ -2,7 +2,9 @@ package com.guptem.UberBackend.entities;
 
 import com.guptem.UberBackend.entities.enums.Role;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.Set;
@@ -11,6 +13,8 @@ import java.util.Set;
 @Table(name = "app_user")
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class User {
 
     private String name;

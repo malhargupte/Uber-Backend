@@ -9,7 +9,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class DriverDto {
 
-    private UserDto userDto;
+    private Long id;
+    private UserDto user; // field names should be same in dto and entity
     private Double rating;
+    private boolean available;
+    private String vehicleId;
 
 }
