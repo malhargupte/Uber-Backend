@@ -7,7 +7,8 @@ import com.guptem.UberBackend.dto.UserDto;
 public interface AuthService {
 
     UserDto signUp(SignUpDto signUpDto);
-    String login(String email, String password);
-    DriverDto onBoardNewDriver(Long userId);
+    String[] login(String email, String password);
+    DriverDto onBoardNewDriver(Long userId, String vehicleId);
+    String refreshToken(String refreshToken);
 
 }

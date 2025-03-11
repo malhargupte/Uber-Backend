@@ -3,20 +3,16 @@ package com.guptem.UberBackend.services.impl;
 import com.guptem.UberBackend.dto.DriverDto;
 import com.guptem.UberBackend.dto.RideDto;
 import com.guptem.UberBackend.dto.RiderDto;
-import com.guptem.UberBackend.entities.Driver;
-import com.guptem.UberBackend.entities.Ride;
-import com.guptem.UberBackend.entities.RideRequest;
+import com.guptem.UberBackend.entities.*;
 import com.guptem.UberBackend.entities.enums.RideRequestStatus;
 import com.guptem.UberBackend.entities.enums.RideStatus;
 import com.guptem.UberBackend.exceptions.ResourceNotFoundException;
 import com.guptem.UberBackend.repo.DriverRepo;
-import com.guptem.UberBackend.services.DriverService;
-import com.guptem.UberBackend.services.PaymentService;
-import com.guptem.UberBackend.services.RideRequestService;
-import com.guptem.UberBackend.services.RideService;
+import com.guptem.UberBackend.services.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,13 +27,15 @@ public class DriverServiceImpl implements DriverService {
     private final RideService rideService;
     private final ModelMapper modelMapper;
     private final PaymentService paymentService;
+    private final RatingService ratingService;
 
-    public DriverServiceImpl(RideRequestService rideRequestService, DriverRepo driverRepo, RideService rideService, ModelMapper modelMapper, PaymentService paymentService) {
+    public DriverServiceImpl(RideRequestService rideRequestService, DriverRepo driverRepo, RideService rideService, ModelMapper modelMapper, PaymentService paymentService, RatingService ratingService) {
         this.rideRequestService = rideRequestService;
         this.driverRepo = driverRepo;
         this.rideService = rideService;
         this.modelMapper = modelMapper;
         this.paymentService = paymentService;
+        this.ratingService = ratingService;
     }
 
     @Override
@@ -87,6 +85,7 @@ public class DriverServiceImpl implements DriverService {
         Ride savedRide = rideService.updateRideStatus(ride, RideStatus.ONGOING);
 
         paymentService.createNewPayment(savedRide);
+        ratingService.createNewRating(savedRide);
 
         return modelMapper.map(savedRide, RideDto.class);
 
@@ -142,7 +141,20 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     public RiderDto rateRider(Long rideId, Integer rating) {
-        return null;
+
+        Ride ride = rideService.getRideById(rideId);
+        Driver driver = getCurrentDriver();
+
+        if (!driver.equals(ride.getDriver())) {
+            throw new RuntimeException("Driver is not the owner of this ride!");
+        }
+
+        if (!ride.getRideStatus().equals(RideStatus.ENDED)) {
+            throw new RuntimeException("You cannot rate the rider, the ride has not ended yet!");
+        }
+
+        return ratingService.rateRider(ride, rating);
+
     }
 
     @Override
@@ -168,8 +180,10 @@ public class DriverServiceImpl implements DriverService {
     @Override
     public Driver getCurrentDriver() {
 
-        return driverRepo.findById(3L)
-                .orElseThrow(() -> new ResourceNotFoundException("Driver could not be found!"));
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        return driverRepo.findByUser(user)
+                .orElseThrow(() -> new ResourceNotFoundException("Driver not associated with user with id " + user.getId()));
 
     }
 
@@ -177,6 +191,13 @@ public class DriverServiceImpl implements DriverService {
     public Driver updateDriverAvailability(Driver driver, boolean available) {
 
         driver.setAvailable(available);
+        return driverRepo.save(driver);
+
+    }
+
+    @Override
+    public Driver createNewDriver(Driver driver) {
+
         return driverRepo.save(driver);
 
     }

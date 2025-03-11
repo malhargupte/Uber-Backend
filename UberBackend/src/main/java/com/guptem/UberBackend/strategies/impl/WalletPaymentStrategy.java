@@ -12,10 +12,7 @@ import com.guptem.UberBackend.strategies.PaymentStrategy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-//Rider has 232 Rs in his wallet
-//Ride fare is 100 Rs, and platform commission is 30 Rs
-//Rider (after ride) --> 132 Rs
-//Driver (already had 500 Rs in his wallet) --> (500 + 70) = 570
+
 
 @Service
 public class WalletPaymentStrategy implements PaymentStrategy {

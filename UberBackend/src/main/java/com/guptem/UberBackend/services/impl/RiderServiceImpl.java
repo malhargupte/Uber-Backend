@@ -11,6 +11,7 @@ import com.guptem.UberBackend.exceptions.ResourceNotFoundException;
 import com.guptem.UberBackend.repo.RideRequestRepo;
 import com.guptem.UberBackend.repo.RiderRepo;
 import com.guptem.UberBackend.services.DriverService;
+import com.guptem.UberBackend.services.RatingService;
 import com.guptem.UberBackend.services.RideService;
 import com.guptem.UberBackend.services.RiderService;
 import com.guptem.UberBackend.strategies.RideStrategyManager;
@@ -18,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -33,6 +35,7 @@ public class RiderServiceImpl implements RiderService {
     private final RideService rideService;
 //    private final RiderService riderService;
     private final DriverService driverService;
+    private final RatingService ratingService;
 
 //    public RiderServiceImpl(ModelMapper modelMapper, RideFareCalculationStrategy rideFareCalculationStrategy, DriverMatchingStrategy driverMatchingStrategy, RideRequestRepo rideRequestRepo, RiderRepo riderRepo) {
 //        this.modelMapper = modelMapper;
@@ -84,7 +87,20 @@ public class RiderServiceImpl implements RiderService {
 
     @Override
     public DriverDto rateDriver(Long rideId, Integer rating) {
-        return null;
+
+        Ride ride = rideService.getRideById(rideId);
+        Rider rider = getCurrentRider();
+
+        if (!rider.equals(ride.getRider())) {
+            throw new RuntimeException("Rider cannot rate the driver!");
+        }
+
+        if (!ride.getRideStatus().equals(RideStatus.ENDED)) {
+            throw new RuntimeException("Ride has not yet ended, hence driver cannot be rated!");
+        }
+
+        return ratingService.rateDriver(ride, rating);
+
     }
 
     @Override
@@ -122,8 +138,10 @@ public class RiderServiceImpl implements RiderService {
 
     @Override
     public Rider getCurrentRider() {
-        //TODO : implement Spring Security
-        return riderRepo.findById(1L)
-                .orElseThrow(() -> new ResourceNotFoundException("Rider not found!"));
+
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        return riderRepo.findByUser(user)
+                .orElseThrow(() -> new ResourceNotFoundException("Rider not associated with user with id: " + user.getId()));
     }
 }
